@@ -222,6 +222,26 @@ Rectangle {
                                     visible:                fact.visible
                                     fact:                  _flyViewSettings.maxGoToLocationDistance
                                 }
+                                QGCLabel {
+                                    text:       qsTr("Go To Location ArUco Marker Lat")
+                                    visible:    arUcoMarkerLatField.visible
+                                }
+                                FactTextField {
+                                    id:                     arUcoMarkerLatField
+                                    Layout.preferredWidth:  _valueFieldWidth
+                                    visible:                fact.visible
+                                    fact:                  QGroundControl.settingsManager.appSettings.arUcoMarkerLat
+                                }
+                                QGCLabel {
+                                    text:       qsTr("Go To Location ArUco Marker Lon")
+                                    visible:    arUcoMarkerLonField.visible
+                                }
+                                FactTextField {
+                                    id:                     arUcoMarkerLonField
+                                    Layout.preferredWidth:  _valueFieldWidth
+                                    visible:                fact.visible
+                                    fact:                  QGroundControl.settingsManager.appSettings.arUcoMarkerLon
+                                }
                             }
 
                             GridLayout {

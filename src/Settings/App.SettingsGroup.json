@@ -325,6 +325,22 @@
     "longDesc":  "Host name to forward mavlink to. i.e: localhost:14445",
     "type":             "string",
     "default":     "localhost:14445"
+},
+{
+    "name":         "arUcoMarkerLat",
+    "shortDesc":    "ArUco Marker Lat",
+    "longDesc":     "ArUco Marker Latitude for Go to command",
+    "type":         "double",
+    "default":      0.0,
+    "decimalPlaces":    7
+},
+{
+    "name":         "arUcoMarkerLon",
+    "shortDesc":    "ArUco Marker Lon",
+    "longDesc":     "ArUco Marker Longitude for Go to command",
+    "type":         "double",
+    "default":      0.0,
+    "decimalPlaces":    7
 }
 ]
 }

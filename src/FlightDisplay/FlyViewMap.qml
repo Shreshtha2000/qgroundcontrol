@@ -179,6 +179,14 @@ FlightMap {
         }
     }
 
+    function handleArUcoMarker(){
+
+        var coord =QtPositioning.coordinate(QGroundControl.settingsManager.appSettings.arUcoMarkerLat.value, QGroundControl.settingsManager.appSettings.arUcoMarkerLon.value)
+        console.log(coord)
+        arUcoLocationItem.show(coord)
+        _guidedController.confirmAction(_guidedController.actionGoToArUcoMarker, coord, arUcoLocationItem)
+    }
+
     on_ActiveVehicleCoordinateChanged: {
         if (_keepMapCenteredOnVehicle && _activeVehicleCoordinate.isValid && !_disableVehicleTracking) {
             _root.center = _activeVehicleCoordinate
@@ -407,6 +415,55 @@ FlightMap {
         }
     }
 
+    // ArUco Marker Location visuals
+    MapQuickItem {
+        id:             arUcoLocationItem
+        visible:        false
+        z:              QGroundControl.zOrderMapItems
+        anchorPoint.x:  sourceItem.anchorPointX
+        anchorPoint.y:  sourceItem.anchorPointY
+        sourceItem: MissionItemIndexLabel {
+            checked:    true
+            index:      -1
+            label:      qsTr("ArUco Marker", "Go to ArUco Marker")
+        }
+
+        property bool inGotoFlightMode: _activeVehicle ? _activeVehicle.flightMode === _activeVehicle.gotoFlightMode : false
+
+        onInGotoFlightModeChanged: {
+            if (!inGotoFlightMode && arUcoLocationItem.visible) {
+                // Hide goto indicator when vehicle falls out of guided mode
+                arUcoLocationItem.visible = false
+            }
+        }
+
+        Connections {
+            target: QGroundControl.multiVehicleManager
+            function onActiveVehicleChanged(activeVehicle) {
+                if (!activeVehicle) {
+                    arUcoLocationItem.visible = false
+                }
+            }
+        }
+
+        function show(coord) {
+            arUcoLocationItem.coordinate = coord
+            arUcoLocationItem.visible = true
+        }
+
+        function hide() {
+            arUcoLocationItem.visible = false
+        }
+
+        function actionConfirmed() {
+            // We leave the indicator visible. The handling for onInGuidedModeChanged will hide it.
+        }
+
+        function actionCancelled() {
+            hide()
+        }
+    }
+
     // Orbit editing visuals
     QGCMapCircleVisuals {
         id:             orbitMapCircle
@@ -551,6 +608,7 @@ FlightMap {
             if (!globals.guidedControllerFlyView.guidedUIVisible && (globals.guidedControllerFlyView.showGotoLocation || globals.guidedControllerFlyView.showOrbit || globals.guidedControllerFlyView.showROI)) {
                 orbitMapCircle.hide()
                 gotoLocationItem.hide()
+                arUcoLocationItem.hide()
                 var clickCoord = _root.toCoordinate(Qt.point(mouse.x, mouse.y), false /* clipToViewPort */)
                 clickMenu.coord = clickCoord
                 clickMenu.popup()

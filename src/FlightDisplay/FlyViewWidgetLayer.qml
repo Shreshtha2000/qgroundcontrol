@@ -273,6 +273,28 @@ Item {
         property real centerInset: visible ? parent.height - y : 0
     }
 
+    // QGCPopupDialog {
+    //     title: qsTr("Go to Marker Location")
+    //     buttons: StandardButton.Close
+
+    //     ColumnLayout{
+
+    //         RowLayout {
+    //             RowLayout {
+    //                 QGCLabel {
+    //                     text: qsTr("Lat:")
+    //                 }
+    //                 FactTextField {
+    //                     id:                     markerLat
+    //                     Layout.preferredWidth:  _valueFieldWidth
+    //                     visible:                fact.visible
+    //                     fact:                   _flyViewSettings.guidedMinimumAltitude
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
     Component {
         id: preFlightChecklistPopup
         FlyViewPreFlightChecklistPopup {

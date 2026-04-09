@@ -68,6 +68,10 @@ Item {
         }
     }
 
+    function setArUcoMarker(){
+        mapControl.handleArUcoMarker()
+    }
+
     QGCToolInsets {
         id:                     _toolInsets
         leftEdgeBottomInset:    _pipOverlay.visible ? _pipOverlay.x + _pipOverlay.width : 0
