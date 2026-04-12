@@ -25,8 +25,8 @@ ToolStripActionList {
         },
         ToolStripAction {
             property var _guidedController: globals.guidedControllerFlyView
-
-          text:         qsTr("GoTo")
+            iconSource: "/res/qrcode.png"
+          text:         qsTr("Marker")
           onTriggered:  {
                 if(QGroundControl.settingsManager.appSettings.arUcoMarkerLat.value !==0 &&  QGroundControl.settingsManager.appSettings.arUcoMarkerLon.value !==0)
                 {

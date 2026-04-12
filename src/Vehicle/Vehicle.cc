@@ -3643,8 +3643,8 @@ void Vehicle::_updateDistanceToMarker(){
     if(_coordinate.isValid() && _markerCoord.isValid()){
         _distanceToArUcoMarker = _coordinate.distanceTo(_markerCoord);
         emit distanceToArUcoMarkerChanged();
-        if(_distanceToArUcoMarker < 5){
-            //Distance to Marker below 5 enable target locking and send gimbal command
+        if(_distanceToArUcoMarker < 10){
+            //Distance to Marker below 10 enable target locking and send gimbal command
             if(!markerHandler->lockingEnabled)
                 markerHandler->enableArUcoDetection(true);
             qDebug()<<_curGimbalPitch;

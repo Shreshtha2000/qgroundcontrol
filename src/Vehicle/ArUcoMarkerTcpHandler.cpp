@@ -1,5 +1,5 @@
 #include "ArUcoMarkerTcpHandler.h"
-
+//This class handles the communication with python script
 ArUcoMarkerTcpHandler::ArUcoMarkerTcpHandler(QObject *parent)
     : QObject{parent}
 {
