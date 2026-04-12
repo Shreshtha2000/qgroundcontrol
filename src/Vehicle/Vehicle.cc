@@ -359,6 +359,7 @@ void Vehicle::_commonInit()
 
     connect(this, &Vehicle::coordinateChanged,      this, &Vehicle::_updateDistanceHeadingToHome);
     connect(this, &Vehicle::coordinateChanged,      this, &Vehicle::_updateDistanceToGCS);
+    connect(this, &Vehicle::coordinateChanged,      this, &Vehicle::_updateDistanceToMarker);
     connect(this, &Vehicle::homePositionChanged,    this, &Vehicle::_updateDistanceHeadingToHome);
     connect(this, &Vehicle::hobbsMeterChanged,      this, &Vehicle::_updateHobbsMeter);
 
@@ -1495,6 +1496,7 @@ void Vehicle::_updateArmed(bool armed)
     if (_armed != armed) {
         _armed = armed;
         emit armedChanged(_armed);
+        _markerFound = false;
         // We are transitioning to the armed state, begin tracking trajectory points for the map
         if (_armed) {
             _trajectoryPoints->start();
@@ -1502,9 +1504,24 @@ void Vehicle::_updateArmed(bool armed)
             _clearCameraTriggerPoints();
             // Reset battery warning
             _lowestBatteryChargeStateAnnouncedMap.clear();
+            if(markerHandler!=nullptr){
+                disconnect(markerHandler, &ArUcoMarkerTcpHandler::detectionFound, this, &Vehicle::_updateMarkerFound);
+                markerHandler->deleteLater();
+            }
+            markerHandler = new ArUcoMarkerTcpHandler();
+            connect(markerHandler, &ArUcoMarkerTcpHandler::detectionFound, this, &Vehicle::_updateMarkerFound);
+            _markerCoord.setLatitude(qgcApp()->toolbox()->settingsManager()->appSettings()->arUcoMarkerLat()->cookedValue().toDouble());
+            _markerCoord.setLongitude(qgcApp()->toolbox()->settingsManager()->appSettings()->arUcoMarkerLon()->cookedValue().toDouble());
         } else {
             _trajectoryPoints->stop();
             _flightTimerStop();
+
+            _markerFound = false;
+            if(markerHandler!=nullptr){
+                disconnect(markerHandler, &ArUcoMarkerTcpHandler::detectionFound, this, &Vehicle::_updateMarkerFound);
+                markerHandler->deleteLater();
+                markerHandler = nullptr;
+            }
             // Also handle Video Streaming
             if(qgcApp()->toolbox()->videoManager()->videoReceiver()) {
                 if(_settingsManager->videoSettings()->disableWhenDisarmed()->rawValue().toBool()) {
@@ -3621,6 +3638,38 @@ void Vehicle::_handleADSBVehicle(const mavlink_message_t& message)
 
         _toolbox->adsbVehicleManager()->adsbVehicleUpdate(vehicleInfo);
     }
+}
+void Vehicle::_updateDistanceToMarker(){
+    if(_coordinate.isValid() && _markerCoord.isValid()){
+        _distanceToArUcoMarker = _coordinate.distanceTo(_markerCoord);
+        emit distanceToArUcoMarkerChanged();
+        if(_distanceToArUcoMarker < 5){
+            //Distance to Marker below 5 enable target locking and send gimbal command
+            if(!markerHandler->lockingEnabled)
+                markerHandler->enableArUcoDetection(true);
+            qDebug()<<_curGimbalPitch;
+            if(_curGimbalPitch > -60){
+                _curGimbalPitch = -60;
+                gimbalControlValue(-60,0);
+            }
+        } else {
+            if(markerHandler->lockingEnabled)
+            {
+                markerHandler->enableArUcoDetection(false);
+                _markerFound = false;
+            }
+            if(_curGimbalPitch != 0){
+                _curGimbalPitch = 0;
+                gimbalControlValue(0,0);
+            }
+        }
+    }
+
+}
+
+void Vehicle::_updateMarkerFound(bool found){
+    _markerFound = found;
+    emit markerFoundChanged();
 }
 
 void Vehicle::_updateDistanceHeadingToHome()

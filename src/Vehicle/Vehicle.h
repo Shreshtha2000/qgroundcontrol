@@ -46,6 +46,7 @@
 #include "RallyPointManager.h"
 #include "FTPManager.h"
 #include "ImageProtocolManager.h"
+#include "ArUcoMarkerTcpHandler.h"
 
 class Actuators;
 class EventHandler;
@@ -256,7 +257,8 @@ public:
     Q_PROPERTY(bool                 requiresGpsFix              READ requiresGpsFix                                                 NOTIFY requiresGpsFixChanged)
     Q_PROPERTY(double               loadProgress                READ loadProgress                                                   NOTIFY loadProgressChanged)
     Q_PROPERTY(bool                 initialConnectComplete      READ isInitialConnectComplete                                       NOTIFY initialConnectComplete)
-
+    Q_PROPERTY(double               distanceToArUcoMarker       READ distanceToArUcoMarker                                          NOTIFY distanceToArUcoMarkerChanged)
+    Q_PROPERTY(bool                 markerFound                 READ markerFound                                                    NOTIFY markerFoundChanged)
     // The following properties relate to Orbit status
     Q_PROPERTY(bool             orbitActive     READ orbitActive        NOTIFY orbitActiveChanged)
     Q_PROPERTY(QGCMapCircle*    orbitMapCircle  READ orbitMapCircle     CONSTANT)
@@ -428,7 +430,13 @@ public:
     Q_INVOKABLE void clearAllParamMapRC(void);
 
     /// Removes the vehicle from the system
-    Q_INVOKABLE void closeVehicle(void) { _vehicleLinkManager->closeVehicle(); }
+    Q_INVOKABLE void closeVehicle(void) { _vehicleLinkManager->closeVehicle();
+        if(markerHandler!=nullptr){
+            disconnect(markerHandler, &ArUcoMarkerTcpHandler::detectionFound, this, &Vehicle::_updateMarkerFound);
+            markerHandler->deleteLater();
+            markerHandler = nullptr;
+        }
+    }
 
     /// Trigger camera using MAV_CMD_DO_DIGICAM_CONTROL command
     Q_INVOKABLE void triggerSimpleCamera(void);
@@ -675,6 +683,9 @@ public:
     VehicleObjectAvoidance*         objectAvoidance     () { return _objectAvoidance; }
     Autotune*                       autotune            () const { return _autotune; }
 
+    double distanceToArUcoMarker            () { return _distanceToArUcoMarker;}
+    bool   markerFound                      () { return _markerFound;}
+
     static const int cMaxRcChannels = 18;
 
     /// Sends the specified MAV_CMD to the vehicle. If no Ack is received command will be retried. If a sendMavCommand is already in progress
@@ -902,6 +913,8 @@ signals:
     void gitHashChanged                 (QString hash);
     void vehicleUIDChanged              ();
     void loadProgressChanged            (float value);
+    void distanceToArUcoMarkerChanged   ();
+    void markerFoundChanged             ();
 
     /// New RC channel values coming from RC_CHANNELS message
     ///     @param channelCount Number of available channels, cMaxRcChannels max
@@ -973,6 +986,8 @@ private slots:
     void _orbitTelemetryTimeout             ();
     void _updateFlightTime                  ();
     void _gotProgressUpdate                 (float progressValue);
+    void _updateDistanceToMarker                  ();
+    void _updateMarkerFound                       (bool found);
 
 private:
     void _joystickChanged               (Joystick* joystick);
@@ -1058,6 +1073,9 @@ private:
     QGeoCoordinate  _homePosition;
     QGeoCoordinate  _armedPosition;
 
+    QGeoCoordinate  _markerCoord;
+    bool            _markerFound = false;
+
     UASInterface*   _mav = nullptr;
     int             _currentMessageCount = 0;
     int             _messageCount = 0;
@@ -1099,6 +1117,7 @@ private:
     bool            _readyToFlyAvailable                    = false;
     bool            _readyToFly                             = false;
     bool            _allSensorsHealthy                      = true;
+    double          _distanceToArUcoMarker                  = 999;
 
     SysStatusSensorInfo _sysStatusSensorInfo;
 
@@ -1117,6 +1136,8 @@ private:
     ComponentInformationManager*    _componentInformationManager    = nullptr;
     VehicleObjectAvoidance*         _objectAvoidance                = nullptr;
     Autotune*                       _autotune                       = nullptr;
+
+    ArUcoMarkerTcpHandler*           markerHandler                  = nullptr;
 #if defined(QGC_AIRMAP_ENABLED)
     AirspaceVehicleManager*         _airspaceVehicleManager         = nullptr;
 #endif

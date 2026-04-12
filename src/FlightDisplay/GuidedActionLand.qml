@@ -14,6 +14,6 @@ GuidedToolStripAction {
     message:    _guidedController.landMessage
     iconSource: "/res/land.svg"
     visible:    _guidedController.showLand && !_guidedController.showTakeoff
-    enabled:    _guidedController.showLand
+    enabled:    _guidedController.showLand && _activeVehicle.markerFound
     actionID:   _guidedController.actionLand
 }
