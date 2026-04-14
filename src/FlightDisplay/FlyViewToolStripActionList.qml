@@ -26,15 +26,30 @@ ToolStripActionList {
         ToolStripAction {
             property var _guidedController: globals.guidedControllerFlyView
             iconSource: "/res/qrcode.png"
-          text:         qsTr("Marker")
-          onTriggered:  {
-                if(QGroundControl.settingsManager.appSettings.arUcoMarkerLat.value !==0 &&  QGroundControl.settingsManager.appSettings.arUcoMarkerLon.value !==0)
-                {
-                    setArUcoMarker()
-                } else {
-                    mainWindow.showMessageDialog("ArUcoMarker", "Marker lat long not set")
-                }
-          }
+            enabled: _activeVehicle.armed
+              text:         qsTr("Marker")
+              onTriggered:  {
+                    if(QGroundControl.settingsManager.appSettings.arUcoMarkerLat.value !==0 &&  QGroundControl.settingsManager.appSettings.arUcoMarkerLon.value !==0)
+                    {
+                        setArUcoMarker()
+                    } else {
+                        mainWindow.showMessageDialog("ArUcoMarker", "Marker lat long not set")
+                    }
+              }
+        },
+        ToolStripAction {
+            property var _guidedController: globals.guidedControllerFlyView
+            iconSource: "/res/land.svg"
+            text:         qsTr("M Land")
+            enabled:    _activeVehicle.armed && _activeVehicle.markerFound
+            onTriggered:  {
+                    if(QGroundControl.settingsManager.appSettings.arUcoMarkerLat.value !==0 &&  QGroundControl.settingsManager.appSettings.arUcoMarkerLon.value !==0)
+                    {
+                        _guidedController.confirmAction(_guidedController.actionGoToArUcoMarkerLand)
+                    } else {
+                        mainWindow.showMessageDialog("ArUcoMarker", "Marker lat long not set")
+                    }
+              }
         },
         PreFlightCheckListShowAction { onTriggered: displayPreFlightChecklist() },
         GuidedActionTakeoff { },

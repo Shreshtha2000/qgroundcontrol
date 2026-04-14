@@ -55,6 +55,7 @@ Item {
     readonly property string roiTitle:                      qsTr("ROI")
     readonly property string actionListTitle:               qsTr("Action")
     readonly property string gotoArUcoMarkerTitle:          qsTr("Go To ArUco Marker")
+    readonly property string gotoArUcoMarkerLandTitle:      qsTr("Land To ArUco Marker")
 
     readonly property string armMessage:                        qsTr("Arm the vehicle.")
     readonly property string forceArmMessage:                   qsTr("WARNING: This will force arming of the vehicle bypassing any safety checks.")
@@ -77,6 +78,8 @@ Item {
     readonly property string vtolTransitionMRMessage:           qsTr("Transition VTOL to multi-rotor flight.")
     readonly property string roiMessage:                        qsTr("Make the specified location a Region Of Interest.")
     readonly property string gotoArUcoMarkerMessage:            qsTr("Go To ArUco Marker as specified in the AppSettings")
+    readonly property string gotoArUcoMarkerLandMessage:            qsTr("Land To ArUco Marker as specified in the AppSettings")
+
 
     readonly property int actionRTL:                        1
     readonly property int actionLand:                       2
@@ -103,6 +106,7 @@ Item {
     readonly property int actionActionList:                 23
     readonly property int actionForceArm:                   24
     readonly property int actionGoToArUcoMarker:            25
+    readonly property int actionGoToArUcoMarkerLand:        26
 
     property var    _activeVehicle:             QGroundControl.multiVehicleManager.activeVehicle
     property bool   _useChecklist:              QGroundControl.settingsManager.appSettings.useChecklist.rawValue && QGroundControl.corePlugin.options.preFlightChecklistUrl.toString().length
@@ -114,7 +118,7 @@ Item {
     property bool showForceArm:         _guidedActionsEnabled && !_vehicleArmed
     property bool showDisarm:           _guidedActionsEnabled && _vehicleArmed && !_vehicleFlying
     property bool showRTL:              _guidedActionsEnabled && _vehicleArmed && _activeVehicle.guidedModeSupported && _vehicleFlying && !_vehicleInRTLMode
-    property bool showTakeoff:          _guidedActionsEnabled && _activeVehicle.takeoffVehicleSupported && !_vehicleFlying && _canArm
+    property bool showTakeoff:          _guidedActionsEnabled && /*_activeVehicle.takeoffVehicleSupported &&*/ !_vehicleFlying //&& _canArm
     property bool showLand:             _guidedActionsEnabled && _activeVehicle.guidedModeSupported && _vehicleArmed && !_activeVehicle.fixedWing && !_vehicleInLandMode
     property bool showStartMission:     _guidedActionsEnabled && _missionAvailable && !_missionActive && !_vehicleFlying && _canArm
     property bool showContinueMission:  _guidedActionsEnabled && _missionAvailable && !_missionActive && _vehicleArmed && _vehicleFlying && (_currentMissionIndex < _missionItemCount - 1)
@@ -457,6 +461,11 @@ Item {
             confirmDialog.message = gotoArUcoMarkerMessage
             confirmDialog.hideTrigger = Qt.binding(function() { return !showGotoLocation })
             break;
+        case actionGoToArUcoMarkerLand:
+            confirmDialog.title = gotoArUcoMarkerLandTitle
+            confirmDialog.message = gotoArUcoMarkerLandMessage
+            confirmDialog.hideTrigger = Qt.binding(function() { return !showGotoLocation })
+            break;
         case actionActionList:
             actionList.show()
             return
@@ -541,8 +550,11 @@ Item {
             _activeVehicle.guidedModeROI(actionData)
             break
         case actionGoToArUcoMarker:
-            _activeVehicle.guidedModeGotoLocation(actionData)
+            _activeVehicle.guidedForMarker(actionData,110)
             break
+        case actionGoToArUcoMarkerLand:
+            _activeVehicle.guidedForMarkerLand()
+            break;
         default:
             console.warn(qsTr("Internal error: unknown actionCode"), actionCode)
             break

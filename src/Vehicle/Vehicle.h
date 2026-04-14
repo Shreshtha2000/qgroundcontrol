@@ -407,6 +407,9 @@ public:
     ///     @param timeoutSec Disabled motor after this amount of time
     Q_INVOKABLE void motorTest(int motor, int percent, int timeoutSecs, bool showError);
 
+    Q_INVOKABLE void guidedForMarker(const QGeoCoordinate& gotoCoord, double alt);
+    Q_INVOKABLE void guidedForMarkerLand();
+
     enum PIDTuningTelemetryMode {
         ModeDisabled,
         ModeRateAndAttitude,

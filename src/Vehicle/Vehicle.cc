@@ -2562,7 +2562,16 @@ void Vehicle::startMission()
 {
     _firmwarePlugin->startMission(this);
 }
+void Vehicle::guidedForMarker(const QGeoCoordinate& gotoCoord, double alt){
+    if(qIsNaN(_homePosition.altitude())){
+        qgcApp()->showAppMessage("Unable to set altitude with go to command, sending location only");
+        guidedModeGotoLocation(gotoCoord);
+    } else {
+        double altitude = _homePosition.altitude() + alt;
+        sendMavCommand(_compID, MAV_CMD_DO_REPOSITION, 1, -1, MAV_DO_REPOSITION_FLAGS_CHANGE_MODE, 0.0f, qQNaN(), gotoCoord.latitude(), gotoCoord.longitude(),altitude );
+    }
 
+}
 void Vehicle::guidedModeGotoLocation(const QGeoCoordinate& gotoCoord)
 {
     if (!guidedModeSupported()) {
@@ -3643,12 +3652,18 @@ void Vehicle::_updateDistanceToMarker(){
     if(_coordinate.isValid() && _markerCoord.isValid()){
         _distanceToArUcoMarker = _coordinate.distanceTo(_markerCoord);
         emit distanceToArUcoMarkerChanged();
-        if(_distanceToArUcoMarker < 10){
-            //Distance to Marker below 10 enable target locking and send gimbal command
+        double dist = 10;
+        if(_vehicleType == MAV_TYPE_FIXED_WING){
+            if(_parameterManager->parameterExists(_compID, "NAV_LOITER_RAD")){
+                dist = _parameterManager->getParameter(_compID, "NAV_LOITER_RAD")->cookedValue().toDouble();
+                dist = dist+0.1*dist;
+            }
+        }
+        if(_distanceToArUcoMarker < dist){
+            //Distance to Marker below dist enable target locking and send gimbal command
             if(!markerHandler->lockingEnabled)
                 markerHandler->enableArUcoDetection(true);
-            qDebug()<<_curGimbalPitch;
-            if(_curGimbalPitch > -60){
+            if(_curGimbalPitch > -60  && _vehicleType == MAV_TYPE_FIXED_WING){
                 _curGimbalPitch = -60;
                 gimbalControlValue(-60,0);
             }
@@ -3658,7 +3673,7 @@ void Vehicle::_updateDistanceToMarker(){
                 markerHandler->enableArUcoDetection(false);
                 _markerFound = false;
             }
-            if(_curGimbalPitch != 0){
+            if(_curGimbalPitch != 0 && _vehicleType == MAV_TYPE_FIXED_WING){
                 _curGimbalPitch = 0;
                 gimbalControlValue(0,0);
             }
@@ -3670,6 +3685,15 @@ void Vehicle::_updateDistanceToMarker(){
 void Vehicle::_updateMarkerFound(bool found){
     _markerFound = found;
     emit markerFoundChanged();
+
+}
+
+
+void Vehicle:: guidedForMarkerLand(){
+    if(_markerFound){
+        qDebug()<<"landing";
+        sendMavCommand(_compID, MAV_CMD_NAV_LAND, 1, 0, qQNaN(), qQNaN(), qgcApp()->toolbox()->settingsManager()->appSettings()->arUcoMarkerLat()->cookedValue().toDouble(), qgcApp()->toolbox()->settingsManager()->appSettings()->arUcoMarkerLon()->cookedValue().toDouble(),0);
+    }
 }
 
 void Vehicle::_updateDistanceHeadingToHome()
