@@ -40,7 +40,92 @@ Item {
             }
         }
     }
+    Rectangle {
+        id: clickRect
+        anchors.fill: parent
+        color: "transparent"
+        z:100
+        property var p1: null
+        property var p2: null
+        property bool setFirst: true
+        property double fov: 5
+        property double gsdK: _activeVehicle!=null? 2 * Math.tan((fov*Math.PI/180)/2) / _activeVehicle.altitudeRelative.value : 0
+        MouseArea {
+            anchors.fill: parent
+            enabled: _activeVehicle != null
+            onClicked: {
+                if (clickRect.setFirst) {
+                    clickRect.p1 = {x: mouse.x, y: mouse.y}
+                    clickRect.p2 = null   // reset second point
+                } else {
+                    clickRect.p2 = {x: mouse.x, y: mouse.y}
+                }
+                clickRect.setFirst = !clickRect.setFirst
+                console.log("clicked")
+            }
+        }
 
+        Rectangle {
+            visible: clickRect.p1 !== null
+            x: clickRect.p1 ? clickRect.p1.x - 5 : 0
+            y: clickRect.p1 ? clickRect.p1.y - 5 : 0
+            width: 10
+            height: 10
+            radius: 5
+            color: "red"
+        }
+
+        Rectangle {
+            visible: clickRect.p2 !== null
+            x: clickRect.p2 ? clickRect.p2.x - 5 : 0
+            y: clickRect.p2 ? clickRect.p2.y - 5 : 0
+            width: 10
+            height: 10
+            radius: 5
+            color: "green"
+        }
+
+        Canvas {
+            anchors.fill: parent
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+
+                if (clickRect.p1 && clickRect.p2) {
+                    ctx.beginPath()
+                    ctx.moveTo(clickRect.p1.x, clickRect.p1.y)
+                    ctx.lineTo(clickRect.p2.x, clickRect.p2.y)
+                    ctx.lineWidth = 2
+                    ctx.strokeStyle = "yellow"
+                    ctx.stroke()
+                }
+            }
+
+            Connections {
+                target: clickRect
+                function onP1Changed() { requestPaint() }
+                function onP2Changed() { requestPaint() }
+            }
+        }
+
+        Text {
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            color: "white"
+            font.pixelSize: 18
+
+            text: {
+                if (clickRect.p1 && clickRect.p2) {
+                    var dx = clickRect.p2.x - clickRect.p1.x
+                    var dy = clickRect.p2.y - clickRect.p1.y
+                    var dist = Math.sqrt(dx*dx + dy*dy)
+                    var dist_m = clickRect.gsdK * dist
+                    return "Distance: " + dist_m.toFixed(2) + " m"
+                }
+                return "Click 2 points"
+            }
+        }
+    }
     Timer {
         id:           videoStartDelay
         interval:     2000;
