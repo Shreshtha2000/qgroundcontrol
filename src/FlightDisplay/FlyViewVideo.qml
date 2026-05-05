@@ -48,8 +48,10 @@ Item {
         property var p1: null
         property var p2: null
         property bool setFirst: true
-        property double fov: 5
-        property double gsdK: _activeVehicle!=null? 2 * Math.tan((fov*Math.PI/180)/2) / _activeVehicle.altitudeRelative.value : 0
+        property double sensorWidth: 8.2 //mm
+        property double fov: 90
+        property double focal_length: sensorWidth / (2*Math.tan((fov*Math.PI/180)/2))
+        property double gsdK: _activeVehicle!=null? (_activeVehicle.altitudeRelative.value*sensorWidth)/(focal_length*720): 0
         MouseArea {
             anchors.fill: parent
             enabled: _activeVehicle != null
@@ -87,6 +89,7 @@ Item {
 
         Canvas {
             anchors.fill: parent
+            id: distanceLine
             onPaint: {
                 var ctx = getContext("2d")
                 ctx.clearRect(0, 0, width, height)
@@ -103,8 +106,8 @@ Item {
 
             Connections {
                 target: clickRect
-                function onP1Changed() { requestPaint() }
-                function onP2Changed() { requestPaint() }
+                function onP1Changed() { distanceLine.requestPaint() }
+                function onP2Changed() { distanceLine.requestPaint() }
             }
         }
 
